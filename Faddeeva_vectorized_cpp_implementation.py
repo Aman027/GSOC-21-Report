@@ -1,17 +1,17 @@
+
 import tensorflow as tf
-import numpy as np
 import math as m
+import numpy as np
 import scipy
 from scipy import special
 from sympy import *
-
-t = symbols('t')                 # t is a symbol from scipy
+t = symbols('t')                               # t is a symbol of scipy
 
 DBL_EPSILON = tf.constant(2.2204460492503131e-16, dtype=tf.float64)
 pi = tf.constant(m.pi, dtype=tf.float64)
 HUGE_VAL = tf.constant(m.inf, dtype=tf.float64)
 
-# tf.config.run_functions_eagerly(True)         #Uncomment this to run functions eagerly
+#tf.config.run_functions_eagerly(True)         # Uncomment this to run functions eagerly
 
 erfcx_coeff = [[1., 0.70878032454106438663e-3, 0.71234091047026302958e-3, 0.35779077297597742384e-5, 0.17403143962587937815e-7, 0.81710660047307788845e-10, 0.36885022360434957634e-12, 0.15917038551111111111e-14 ]
 ,[3., 0.21479143208285144230e-2 ,0.72686402367379996033e-3, 0.36843175430938995552e-5, 0.18071841272149201685e-7, 0.85496449296040325555e-10, 0.38852037518534291510e-12, 0.16868473576888888889e-14 ]
@@ -213,11 +213,12 @@ w_im_y100_coeff = [[0.0, 0.0, 9.29741219351111e-14, 8.91289076664501e-12, 9.2474
 [0.0, 0.0, -1.08858591146667e-13, 1.46027871284479e-11, -1.24406426074269e-9, -1.25974146205180e-8, 2.90577960729601e-5, -0.00615868984170770, 0.0530910658384536] ,
 [0.0, 0.0, -1.00912314028444e-13, 1.33445623324306e-11, -1.10441691175530e-9, -2.19829520218237e-8, 2.89534964501917e-5, -0.00604264848894137, 0.0408897971153527]]
 
+
 @tf.function(autograph=False)
 def faddeeva_im_y100(y100, shift, val):
     """
         Given y100=100*y, where y = 1/(1+x) for x >= 0, computes Im[w(x)].
-        Here w(x) is Faddeeva / scaled complex error function.
+        Here w(x) is Faddeeva / scaled complex error function
 
         This uses a look-up table of 100 different Chebyshev polynomials
         for y intervals [0,0.01], [0.01,0.02], ...., [0.99,1]. This allows
@@ -270,10 +271,8 @@ def faddeeva_img(x_input):
     return tf.where(cond_1,                 # abs(x_input) > 45
                     tf.where(cond_2,        # abs(x_input) > 5e7
                              (ispi) / x, 
-                              ispi * ((x2) * (x2 - 4.5) + 2) / (x * ((x2) * (x2 - 5) + 3.75)) #5-term expansion (rely on compiler for CSE), simplified from: ispi / (x-0.5/(x-1/(x-1.5/(x-2/x))))  
-                            ),
-                    res
-                    )
+                              ispi * ((x2) * (x2 - 4.5) + 2) / (x * ((x2) * (x2 - 5) + 3.75))), #5-term expansion (rely on compiler for CSE), simplified from: ispi / (x-0.5/(x-1/(x-1.5/(x-2/x))))  
+                    res)
 
 @tf.function(autograph=False)
 def erfcx_y100(y100, x, coeff):
@@ -288,6 +287,7 @@ def erfcx_y100(y100, x, coeff):
     t_erfcx = 2 * y100 - shift
 
     return coeff0 +(coeff1 +(coeff2 + (coeff3 + (coeff4 + (coeff5 + coeff6 * t_erfcx) * t_erfcx) * t_erfcx) * t_erfcx) * t_erfcx) * t_erfcx
+
 
 
 @tf.function(autograph=False) 
@@ -366,11 +366,11 @@ def estimate_nu(args):
     """
         Compute nu(z) estimate and calculates general continued fraction.
     """
+
     (relerr, z, a, c, a2, x, y, ya, bool_exceptions, sum_variables) = args
     (sum1, sum2, sum3, sum4, sum5) = sum_variables
     xs = tf.math.sign(y) * tf.math.real(z)
-
-    ispi = 1 / tf.math.sqrt(pi)
+    ispi = 1 / tf.math.sqrt(pi)  
     c0 = 3.9
     c1 = 11.398
     c2 = 0.08254
@@ -378,7 +378,7 @@ def estimate_nu(args):
     c4 = 0.2023
     nu = tf.math.floor((c0 + c1) / (c2 * x + c3 * ya + c4))
     wr = xs
-    wi = ya  
+    wi = ya 
     nu_wr_wi = (0.5 * (nu - 1), wr, wi)
 
     @tf.function(autograph=False)
@@ -392,12 +392,12 @@ def estimate_nu(args):
         return (nu - 0.5, wr, wi)  
 
     wr, wi = tf.unstack(tf.while_loop(cond, body, nu_wr_wi)[1:])
-
     denom = ispi / (wr * wr + wi * wi)
-    return tf.complex(denom * wi, denom * wr)
+    
+    return tf.complex(denom * wi, denom * wr)  
 
 @tf.function(autograph=False)
-def continued_ifhelper(args):  
+def continued_ifhelper(args): 
     """
         Helper function for 'faddeeva_helper function'.
         Continued fraction is faster, it seems to give a large relative error in
@@ -423,8 +423,8 @@ def continued_ifhelper(args):
     di = 2 * xs * ya
     denom3 = ispi / (dr * dr + di * di)  
     zero = tf.constant(0., dtype=tf.float64)
-
     nan_constant = tf.constant(np.nan, dtype=tf.float64)
+
     ret = tf.where(cond1,
                    tf.where(cond2,
                             tf.where(cond3_1,
@@ -448,45 +448,26 @@ def elseifhelper_if(args):
         Here x<5e-4, computes sum4 and sum5 together as sum5-sum4
     """
 
-    (x, y, a, a2, exp2ax, expm2ax, relerr, sum_variables) = args  
-    x2 = x * x  
-    expx2 = 1 - x2 * (1 - 0.5 * x2)  
+    (x, y, a, a2, exp2ax, expm2ax, relerr, sum_variables) = args   # input size is same as x
     sum1, sum2, sum3, sum4, sum5 = sum_variables
+    x2 = tf.math.square(x)
+    expx2 = 1 - x2 * (1 - 0.5 * x2)  # exp(-x*x) via Taylor
 
-    n = tf.ones_like(exp2ax, dtype=tf.float64)
-    coef = tf.math.exp(-a2 * (n * n)) * expx2 / (a2 * (n * n) + y * y)
-    prod2ax = exp2ax
-    prodm2ax = expm2ax  
-    sum1 = coef
-    sum2 = coef * prodm2ax
-    sum3 = coef * prod2ax
-    sum5 = coef * (2 * a) * n * sinh_taylor((2 * a) * n * x)
-    sum4 = tf.zeros_like(sum1, dtype=tf.float64)
-    iterators = (coef, n, prod2ax, prodm2ax, sum1, sum2, sum3, sum5)
+    n = tf.range(1, 53, 1,dtype=tf.float64)
+    n = n[...,None]                               # shape of n is [52,1] ,i.e., column vector
+    expx2 =  expx2[None,...]                      # shape is [1, size of input] ,i.e., row vector
+    coef = tf.math.exp(-a2 * (n * n))
+    coef = coef * expx2 / (a2 * (n * n) + y * y)  # shape [52, size of input]
 
-    @tf.function(autograph=False)
-    def cond(coef, n, prod2ax, prodm2ax, sum1, sum2, sum3, sum5):
-        return tf.reduce_any(tf.greater_equal(coef * prod2ax, relerr * sum3))  
+    prod2ax =  tf.math.pow(exp2ax,n)
+    prodm2ax = tf.math.pow(expm2ax,n)
+    sum1 = tf.math.cumsum(coef)
+    sum2 = tf.math.cumsum(coef * prodm2ax)
+    sum3 = tf.math.cumsum(coef * prod2ax)
+    sum5_helper_matrix  = coef * (2*a) * n * sinh_taylor((2*a)*n*x)
+    sum5 = tf.math.cumsum(sum5_helper_matrix)
 
-    @tf.function(autograph=False)
-    def body(coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum5):
-        n = n_old + 1 
-        coef_ = tf.math.exp(-a2 * (n * n)) * expx2 / (a2 * (n * n) + y * y)
-        prod2ax_ = tf.multiply(prod2ax, exp2ax)
-        prodm2ax_ = tf.multiply(prodm2ax, expm2ax)
-        sum1_ = tf.add(sum1, coef_)
-        sum2_ = tf.add(sum2, coef_ * prodm2ax_)
-        sum3_ = tf.add(sum3, coef_ * prod2ax_)
-        sum5_ = tf.add(sum5, coef_ * (2 * a) * n * sinh_taylor((2 * a) * n * x))
-
-        return_continue = (coef_, n, prod2ax_, prodm2ax_, sum1_, sum2_, sum3_, sum5_)
-        return_break = (coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum5)
-
-        r = tf.unstack(tf.where(tf.greater_equal(coef * prod2ax, relerr * sum3), return_continue, return_break))
-        return r
-
-    coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum5 = tf.unstack(tf.while_loop(cond, body, iterators))
-    return (expx2, sum1, sum2, sum3, sum4, sum5)
+    return (expx2[0], sum1[-1], sum2[-1], sum3[-1], sum4, sum5[-1])
 
 @tf.function(autograph=False)
 def elseifhelper_else(args):
@@ -494,96 +475,69 @@ def elseifhelper_else(args):
         Helper function for 'continued_elseifhelper' function.
         Here x>5e-4, computes sum4 and sum5 separately
     """
-    (x, y, a, a2, exp2ax, expm2ax, relerr, sum_variables) = args  
+    (x, y, a, a2, exp2ax, expm2ax, relerr, sum_variables) = args  # input size is same as x
     sum1, sum2, sum3, sum4, sum5 = sum_variables
     expx2 = tf.math.exp(-x * x)
-    n = tf.ones_like(exp2ax, dtype=tf.float64)
-    coef = tf.math.exp(-a2 * (n * n)) * expx2 / (a2 * (n * n) + y * y)
-    prod2ax = exp2ax
-    prodm2ax = expm2ax
-    sum1 = coef
-    sum2 = coef * prodm2ax
-    sum4 = (coef * prodm2ax) * (a * n)
-    sum3 = coef * prod2ax
-    sum5 = (coef * prod2ax) * (a * n)
-    iterators = (coef, n, prod2ax, prodm2ax, sum1, sum2, sum3, sum4, sum5)
+    n = tf.range(1, 53, 1,dtype=tf.float64)
+    n = n[...,None]
+    expx2 =  expx2[None,...]
+    coef = tf.math.exp(-a2 * (n * n))
+    coef = coef * expx2 / (a2 * (n * n) + y * y)                # shape [52, size of input]
 
-    @tf.function(autograph=False)
-    def cond(coef, n, prod2ax, prodm2ax, sum1, sum2, sum3, sum4, sum5):
-        return tf.reduce_any(tf.greater_equal(tf.multiply(coef, prod2ax) * (a * n), tf.multiply(relerr, sum5)))
+    prod2ax =  tf.math.pow(exp2ax,n)
+    prodm2ax = tf.math.pow(expm2ax,n)
+    sum1 = tf.math.cumsum(coef)
+    sum2 = tf.math.cumsum(coef * prodm2ax)
+    sum3 = tf.math.cumsum(coef * prod2ax)
+    sum4 = tf.math.cumsum((coef * prodm2ax)*(a*n))
+    sum5 = tf.math.cumsum((coef * prod2ax) * (a*n))
 
-    @tf.function(autograph=False)
-    def body(coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum4, sum5):
-        n = n_old + 1
-        coef_ = tf.math.exp(-a2 * (n * n)) * expx2 / (a2 * (n * n) + y * y)
-        prod2ax_ = tf.multiply(prod2ax, exp2ax)
-        prodm2ax_ = tf.multiply(prodm2ax, expm2ax)
-        sum1_ = tf.add(coef_, sum1)
-        sum2_ = tf.add(sum2, coef_ * prodm2ax_)
-        sum4_ = tf.add(sum4, (coef_ * prodm2ax_) * (a * n))
-        sum3_ = tf.add(sum3, coef_ * prod2ax_)
-        sum5_ = tf.add(sum5, (coef_ * prod2ax_) * (a * n))
-
-        return_continue = (coef_, n, prod2ax_, prodm2ax_, sum1_, sum2_, sum3_, sum4_, sum5_)
-        return_break = (coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum4, sum5)
-
-        r = tf.unstack(
-            tf.where(tf.greater_equal(tf.multiply(coef, prod2ax) * (a * n), tf.multiply(relerr, sum5)), return_continue,
-                     return_break))
-        return r
-
-    coef, n_old, prod2ax, prodm2ax, sum1, sum2, sum3, sum4, sum5 = tf.unstack(tf.while_loop(cond, body, iterators))
-    return (expx2, sum1, sum2, sum3, sum4, sum5)
+    return (expx2[0], sum1[-1], sum2[-1], sum3[-1], sum4[-1], sum5[-1])
 
 @tf.function(autograph=False)
-def continued_elseifhelper(args): 
+def continued_elseifhelper(args):  
     """
         Helper function for 'faddeeva_helper function'   
         Uses x<10 to reduce numerical problems because of underflow/overflow
         problems which start to appear in the various coefficients of the sums for larger x.
     """
-
     (relerr, z, a, c, a2, x, y, ya, bool_exceptions, sum_variables) = args
     (sum1, sum2, sum3, sum4, sum5) = sum_variables
     prod2ax = prodm2ax = 1  
     zero = tf.constant(0., dtype=tf.float64)
     ret = tf.complex(zero, zero)
+
     exp2ax = tf.math.exp((2 * a) * x)
     expm2ax = 1 / exp2ax  
     exp_args = (x, y, a, a2, exp2ax, expm2ax, relerr, sum_variables)
-
+    
     # computes exp(-a2*(n*n)) on the go
     (expx2, sum1, sum2, sum3, sum4, sum5) = tf.unstack(
-                                                        tf.where(
-                                                            x < 5e-4,
-                                                            elseifhelper_if(exp_args),
-                                                            elseifhelper_else(exp_args)
-                                                            )
-                                                        )
+                                                        tf.where(x < 5e-4,
+                                                                 elseifhelper_if(exp_args),
+                                                                 elseifhelper_else(exp_args))
+                                                    )
 
-    expx2erfcxy = tf.where(tf.greater(y, -6), expx2 * erfcx(y), 2 * tf.math.exp(y * y - x * x))
+    expx2erfcxy = tf.where(tf.greater(y, -6), expx2 * erfcx(y), 2 * tf.math.exp(y * y - x * x)) # avoids overflows for large negative y
     xs = tf.math.real(z)
     sinxy = tf.where(tf.greater(y, 5), tf.math.sin(x * y), tf.math.sin(tf.multiply(xs, y)))
     sin2xy = tf.math.sin(2 * xs * y)
     cos2xy = tf.math.cos(2 * xs * y)
     coef1 = expx2erfcxy - c * y * sum1
     coef2 = c * xs * expx2
-
-    ret = tf.where(
-                    tf.greater(y, 5),
-                    tf.complex(
+    ret = tf.where(tf.greater(y, 5),
+                   tf.complex(
                        (expx2erfcxy - c * y * sum1) * tf.math.cos(2 * x * y) + (c * x * expx2) * sinxy * sinc(x * y,sinxy),
-                       zero
-                        ),
-                    ret
+                       zero),
+                   ret
                 )
-    ret = tf.where(
-                    tf.less_equal(y, 5),
-                    tf.complex(
+    ret = tf.where(tf.less_equal(y, 5),
+                   tf.complex(
                         coef1 * cos2xy + coef2 * sinxy * sinc(xs * y, sinxy),
                         coef2 * sinc(2 * xs * y, sin2xy) - coef1 * sin2xy),
-                    ret
+                   ret
                 )
+
     return (sum1, sum2, sum3, sum4, sum5, ret)
 
 @tf.function(autograph=False)
@@ -597,18 +551,19 @@ def continued_elsehelper(args):
     bool_notexceptions = tf.math.logical_not(bool_exceptions)
     one = tf.constant(1., dtype=tf.float64)
     zero = tf.constant(0., dtype=tf.float64)
-    ret = tf.math.exp(-x * x)
-    n0 = tf.math.floor(tf.divide(x, a) + 0.5)
+    ret = tf.math.exp(-x * x)                 # when using continued fraction
+    n0 = tf.math.floor(tf.divide(x, a) + 0.5) # sum in both directions, starting at n0
     dx = a * n0 - x
+
     sum3 = tf.math.exp(-dx * dx) / (a2 * (n0 * n0) + y * y)
     sum5 = a * n0 * sum3
 
     exp1 = tf.math.exp(4 * a * dx)
     exp1dn = tf.ones_like(sum3, dtype=tf.float64)
     dn = tf.ones_like(x, dtype=tf.float64)
-    bool_temp = tf.ones_like(x, dtype=tf.float64) 
-    iterators = (exp1dn, dn, sum3, sum5, bool_temp)
+    bool_temp = tf.ones_like(x,  dtype =tf.float64)  
 
+    iterators = (exp1dn, dn, sum3, sum5, bool_temp)
     # loop over n0-dn and n0+dn terms
     @tf.function(autograph=False)
     def cond(exp1dn_old, dn, sum3, sum5, bool_temp):
@@ -630,29 +585,26 @@ def continued_elsehelper(args):
 
         dn, sum3_toReturn, sum5_toReturn = tf.unstack(
                                                         tf.where(
-                                                            tf.equal(bool_temp, one), 
-                                                            (dn + one, sum3, sum5), 
-                                                            (dn, sum3_old, sum5_old)
-                                                            )
+                                                            tf.equal(bool_temp, one),
+                                                            (dn + one, sum3, sum5),
+                                                            (dn, sum3_old, sum5_old))
                                                     )
         bool_temp = tf.where(condition, tf.constant(0., dtype=tf.float64), bool_temp)
         return (exp1dn, dn, sum3_toReturn, sum5_toReturn, bool_temp)
 
     dn, sum3_old, sum5_old, bool_temp = tf.unstack(tf.while_loop(cond, body, iterators)[1:])
+    bool_cont = tf.where(tf.equal(bool_temp, one), one, zero) 
+    bool_cont = tf.where(tf.math.is_nan(x), zero, bool_cont)
+    bool_cont = tf.where(tf.math.is_nan(y), zero, bool_cont)
 
-    bool_continue = tf.where(tf.equal(bool_temp, one), one, zero)  
-    bool_continue = tf.where(tf.math.is_nan(x), zero, bool_continue)
-    bool_continue = tf.where(tf.math.is_nan(y), zero, bool_continue)
-
-    iterators_ = (dn, bool_continue, sum3, sum5)
+    iterators_ = (dn, bool_cont, sum3, sum5)
     # loop over n0+dn terms only (since n0-dn <= 0)
     @tf.function(autograph=False)
-    def cond2(dn, bool_continue, sum3, sum5):
-        return tf.reduce_any(tf.math.logical_and(tf.equal(bool_continue, one),bool_notexceptions))
+    def cond2(dn, bool_cont, sum3, sum5):
+        return tf.reduce_any(tf.math.logical_and(tf.equal(bool_cont, one),bool_notexceptions))
 
     @tf.function(autograph=False)
-    def body2(dn_old, bool_continue, sum3_old, sum5_old):
-
+    def body2(dn_old, bool_cont, sum3_old, sum5_old):
         np = n0 + dn_old
         dn = dn_old + 1
         tp = tf.math.exp(-tf.math.square(a * dn + dx)) / (a2 * (np * np) + y * y)
@@ -661,14 +613,14 @@ def continued_elsehelper(args):
 
         # return_condition and break condition
         condition = tf.less(a * np * tp, relerr * sum5)
-        
-        # if condition == True, make bool_continue False
-        bool_continue = tf.where(condition, tf.constant(0., dtype=tf.float64), bool_continue)
+
+        # if condition == True, make bool_cont False
+        bool_cont = tf.where(condition, tf.constant(0., dtype=tf.float64), bool_cont)
         sum3, sum5 = tf.unstack(tf.where(condition, (sum3_old, sum5_old), (sum3, sum5)))
-        return (dn, bool_continue, sum3, sum5)
+        return (dn, bool_cont, sum3, sum5)
 
     sum3_new, sum5_new = tf.unstack(tf.while_loop(cond2, body2, iterators_)[2:])
-    sum3, sum5 = tf.unstack(tf.where(tf.equal(bool_continue, 1.), (sum3_new, sum5_new), (sum3_old, sum5_old)))
+    sum3, sum5 = tf.unstack(tf.where(tf.equal(bool_cont, 1.), (sum3_new, sum5_new), (sum3_old, sum5_old)))
 
     ret = tf.complex(ret, tf.constant(0, dtype=tf.float64))
     return (sum1, sum2, sum3, sum4, sum5, ret)  
@@ -696,8 +648,12 @@ def faddeeva_helper(z, relerr):
     z - tensor, dtype = tf.complex128
     relerr - tensor, dtype = tf.float64
     """
-
-    relerr, a, c, a2 = tf.unstack(tf.where(tf.less_equal(relerr, DBL_EPSILON), relerr_if_cond(), relerr_else_cond()))
+    relerr, a, c, a2 = tf.unstack(
+                                   tf.where(tf.less_equal(relerr, DBL_EPSILON), 
+                                           relerr_if_cond(), 
+                                           relerr_else_cond()
+                                           )
+                                )
     x = tf.math.abs(tf.math.real(z))
     y = tf.math.imag(z)
     ya = tf.math.abs(tf.math.imag(z))
@@ -705,37 +661,29 @@ def faddeeva_helper(z, relerr):
     zero = tf.constant(0., dtype=tf.float64)
     ret = zero 
     sum1 = sum2 = sum3 = sum4 = sum5 = tf.zeros_like(x)
-    sum_variables = (sum1, sum2, sum3, sum4, sum5) 
+    sum_variables = (sum1, sum2, sum3, sum4, sum5)
+    
     # boolean_exceptions is true when we return answer after call to helper functions with no furthur operations to perform
-    bool_exceptions = False  
+    bool_exceptions = False 
 
     # Using continued fraction, algorithm 816 in this region
-    cond1 = tf.math.logical_or(
-                                tf.greater(ya, 7),
-                                tf.math.logical_and(
-                                    tf.greater(x, 6),
-                                    tf.math.logical_or(
-                                        tf.greater(ya, 0.1),
-                                        tf.math.logical_or(
-                                            tf.math.logical_and(
-                                                tf.greater(x, 8),
-                                                tf.greater(ya, 1e-10)
-                                            ),
-                                            tf.greater(x, 28)
-                                        )
-                                    )
-                                )
-                            )
+    cond1 = tf.math.logical_or(tf.greater(ya, 7),
+                               tf.math.logical_and(
+                                   tf.greater(x, 6),
+                                   tf.math.logical_or(
+                                       tf.greater(ya, 0.1),
+                                       tf.math.logical_or(
+                                           tf.math.logical_and(tf.greater(x, 8), tf.greater(ya, 1e-10)),
+                                           tf.greater(x, 28)))))
 
-    cond2 = tf.less(x, tf.constant(10, dtype=tf.float64)) 
-    bool_exceptions = tf.where(cond1, True, bool_exceptions) 
+    cond2 = tf.less(x, tf.constant(10, dtype=tf.float64))  
+    bool_exceptions = tf.where(cond1, True, bool_exceptions)  
     bool_exceptions = tf.where(tf.math.logical_or(tf.math.is_nan(y), tf.math.is_nan(x)), True, bool_exceptions)
-    boolean_copy = bool_exceptions                  # boolean_copy is copy of boolean_exceptions
-    bool_exceptions = tf.where(cond1,True,bool_exceptions)
+    boolean_copy = bool_exceptions              # boolean_copy is copy of boolean_exceptions
     bool_exceptions = tf.where(cond2,True,bool_exceptions)
 
-    args = (relerr, z, a, c, a2, x, y, ya, bool_exceptions, sum_variables)  
-
+    args = (relerr, z, a, c, a2, x, y, ya, bool_exceptions, sum_variables)  # argument for each function call
+ 
     ifhelper_result = continued_ifhelper(args)           # Uses continued fraction 
     elseifhelper_result = continued_elseifhelper(args)  # x<10 to reduce overlow/underflow in sum_variables
     elsehelper_result = continued_elsehelper(args)
@@ -755,24 +703,28 @@ def faddeeva_helper(z, relerr):
     return ret
 
 @tf.function(autograph=False)
-def faddeeva(z, relerr): 
+def faddeeva(z, relerr):  
+    """
+    Calculates the  Faddeeva function with given relative error.
+    Inputs: 
+        z - tf.complex128 Tensor
+        relerr - tf.float64 
+    """
     x = tf.math.real(z)
     y = tf.math.imag(z)
-
     zero = tf.constant(0., dtype=tf.float64)
-    ret = tf.where(
-                    tf.equal(x, zero),
-                    tf.complex(erfcx(y), zero),
-                    tf.where(
-                        tf.equal(y, zero), 
-                        tf.complex(tf.math.exp(-tf.math.square(x)), faddeeva_img(x)),
-                        faddeeva_helper(z, relerr)
+
+    ret = tf.where(tf.equal(x, zero),
+                   tf.complex(erfcx(y), zero),
+                   tf.where(tf.equal(y, zero), 
+                            tf.complex(tf.math.exp(-tf.math.square(x)), faddeeva_img(x)),
+                            faddeeva_helper(z, relerr)
                     )
                 )
     return ret
 
 def unit_tests():
-
+    "Tests edge cases for faddeeva function"
     complex_list = [(624.2,-0.26123),
       (82.22756651,-349.16044211),
       (-0.4,3.),
