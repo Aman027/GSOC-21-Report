@@ -191,7 +191,7 @@ def unit_tests():
     
     result = wofz(tf_complex_list)
 
-    for i in range(len(result)):
+    for i in range(len(complex_list)):
         print("Complex no. : ",complex_list[i],"  Scipy ans : ",special.wofz(numpy_complex_list[i])," TF ans : ",result[0][i].numpy()+1j*result[1][i].numpy())
         
 unit_tests()
