@@ -146,7 +146,7 @@ I have also implemented **erfcx** function or scaled complementary error functio
  <td>&nbsp;</td>
  <td style="padding-right: 2.5" >CPU</td>
 <td>GPU</td>
- <td></td>
+ <!-- <td></td> -->
  <td > CPU</td>
  <td>GPU</td>
 </tr>
@@ -155,22 +155,24 @@ I have also implemented **erfcx** function or scaled complementary error functio
 <tr>
 
  <td>1e5</td>
- <td>24.5 ms</td>
- <td ></td>
- <td "padding-right: 30px">513 ms</td>
- <td>5.28 ms</td>
+ <td>45 ms</td> 
+ <!-- gpu -->
+ <td >10.3 ms</td>
+ <td "padding-right: 30px">25.2 ms</td>
+ <td>2.52 ms</td>
 </tr>
 <tr>
  <td>1e6</td>
- <td>31.8 ms</td>
- <td ></td>
- <td "padding-right: 30px">6.32 s</td>
- <td>8.07 ms</td>
+ <td>334 ms</td>
+ <td >17.6 ms</td>
+ <td "padding-right: 30px">168 ms</td>
+ <td>5.8 ms</td>
 </tr>
 
 
 </table>  
-### Benchmark Results
+
+<!-- ### Benchmark Results
 
 <table cellpadding="5" cellspacing="52">
 <tr>
@@ -219,7 +221,7 @@ I have also implemented **erfcx** function or scaled complementary error functio
  
 </tr>
 
-</table>  
+</table>   -->
 
 
 ### [Approach 3 : Lighter Implementation]
